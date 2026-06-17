@@ -18,7 +18,13 @@ from app.services.auth_service import get_current_user
 from app.services.webhook_service import ALL_EVENTS, generate_secret
 
 
-router = APIRouter(prefix=f"{settings.API_PREFIX}/projects/{{project_id}}/webhooks", tags=["webhooks"])
+# NOTE: We deliberately avoid the bare ``/webhooks`` suffix because the
+# older ``email_digest.router`` already exposes ``GET/PUT /projects/{id}/webhooks``
+# for the legacy "list of URLs stored in project.settings_json" feature.
+# Using a more specific path here keeps the two APIs from colliding and
+# lets the dedicated subscriptions API (with HMAC signing, retry, deliveries)
+# evolve independently.
+router = APIRouter(prefix=f"{settings.API_PREFIX}/projects/{{project_id}}/webhook-subscriptions", tags=["webhooks"])
 
 
 # -------- schemas --------

@@ -56,10 +56,15 @@ export function WebhooksPanel({ projectId }: Props) {
     setError(null);
     try {
       const res = await api.get<WebhookSubscription[]>(
-        `/projects/${projectId}/webhooks`
+        `/projects/${projectId}/webhook-subscriptions`
       );
-      setSubs(res.data);
+      // Defensive: backend must return an array.  If for any reason it
+      // returns an object (e.g. a 200 with an error envelope), coerce
+      // to an empty array so the UI doesn't crash on `.map`.
+      const data = Array.isArray(res.data) ? res.data : [];
+      setSubs(data);
     } catch (err: any) {
+      setSubs([]);
       setError(err?.response?.data?.detail || "Failed to load webhooks");
       toast.error(err?.response?.data?.detail || "Failed to load webhooks");
     } finally {
@@ -74,9 +79,10 @@ export function WebhooksPanel({ projectId }: Props) {
   async function loadDeliveries(id: string) {
     try {
       const res = await api.get<WebhookDelivery[]>(
-        `/projects/${projectId}/webhooks/${id}/deliveries?limit=50`
+        `/projects/${projectId}/webhook-subscriptions/${id}/deliveries?limit=50`
       );
-      setDeliveries(res.data);
+      const data = Array.isArray(res.data) ? res.data : [];
+      setDeliveries(data);
     } catch (err: any) {
       toast.error(err?.response?.data?.detail || "Failed to load deliveries");
       setDeliveries([]);
@@ -94,7 +100,7 @@ export function WebhooksPanel({ projectId }: Props) {
   }) {
     try {
       const res = await api.post<WebhookWithSecret>(
-        `/projects/${projectId}/webhooks`,
+        `/projects/${projectId}/webhook-subscriptions`,
         p
       );
       setSecretShown({ id: res.data.id, secret: res.data.secret });
@@ -109,7 +115,7 @@ export function WebhooksPanel({ projectId }: Props) {
   async function onDelete(id: string, url: string) {
     if (!confirm(t("webhooks.deleteConfirm", url))) return;
     try {
-      await api.delete(`/projects/${projectId}/webhooks/${id}`);
+      await api.delete(`/projects/${projectId}/webhook-subscriptions/${id}`);
       toast.success(t("webhooks.deleted"));
       await load();
     } catch (err: any) {
@@ -121,7 +127,7 @@ export function WebhooksPanel({ projectId }: Props) {
     if (!confirm("Rotate the signing secret? You'll need to update your receiver.")) return;
     try {
       const res = await api.post<WebhookWithSecret>(
-        `/projects/${projectId}/webhooks/${id}/rotate`
+        `/projects/${projectId}/webhook-subscriptions/${id}/rotate`
       );
       setSecretShown({ id: res.data.id, secret: res.data.secret });
       toast.success(t("webhooks.rotatedToast", res.data.secret));
