@@ -1,0 +1,61 @@
+{{- if .Values.celery.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "smart-pm.fullname" . }}-celery
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: celery
+    app.kubernetes.io/component: worker
+    {{- include "smart-pm.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.celery.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: celery
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: celery
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        {{- include "smart-pm.labels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "smart-pm.serviceAccountName" . }}
+      containers:
+        - name: worker
+          image: "{{ .Values.image.registry }}/{{ .Values.celery.image.repository }}:{{ .Values.celery.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["celery", "-A", "app.workers.celery_app", "worker", "--loglevel=info"]
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "smart-pm.fullname" . }}-secrets
+                  key: POSTGRES_PASSWORD
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "smart-pm.fullname" . }}-secrets
+                  key: JWT_SECRET_KEY
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "smart-pm.fullname" . }}-secrets
+                  key: ANTHROPIC_API_KEY
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "smart-pm.fullname" . }}-secrets
+                  key: OPENAI_API_KEY
+            - name: SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "smart-pm.fullname" . }}-secrets
+                  key: SENTRY_DSN
+          envFrom:
+            - configMapRef:
+                name: {{ include "smart-pm.fullname" . }}-config
+          resources:
+            {{- toYaml .Values.celery.resources | nindent 12 }}
+{{- end }}

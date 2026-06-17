@@ -1,0 +1,17 @@
+apiVersion: v2
+name: smart-pm
+description: Smart Student Project Manager — full-stack web app
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+home: https://github.com/your-org/smart-project-manager
+sources:
+  - https://github.com/your-org/smart-project-manager
+keywords:
+  - project-management
+  - ai
+  - education
+maintainers:
+  - name: Smart PM team
+    email: team@example.com
+icon: https://raw.githubusercontent.com/your-org/smart-project-manager/main/docs/icon.png

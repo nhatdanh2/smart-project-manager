@@ -1,0 +1,151 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #f8fafc;
+  --fg: #0f172a;
+}
+
+.dark {
+  --bg: #0b1120;
+  --fg: #e2e8f0;
+}
+
+html,
+body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100;
+  }
+}
+
+.btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors;
+}
+.btn-primary {
+  @apply btn bg-primary text-white hover:bg-indigo-700;
+}
+.btn-secondary {
+  @apply btn bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700 dark:hover:bg-slate-700;
+}
+.btn-danger {
+  @apply btn bg-danger text-white hover:bg-red-600;
+}
+.btn-ghost {
+  @apply btn bg-transparent text-gray-600 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800;
+}
+
+.card {
+  @apply bg-white border border-gray-200 rounded-lg shadow-sm p-4 dark:bg-slate-900 dark:border-slate-800;
+}
+
+.input {
+  @apply w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500;
+}
+
+.label {
+  @apply block text-sm font-medium text-gray-700 mb-1 dark:text-slate-300;
+}
+
+.badge {
+  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
+}
+.badge-critical {
+  @apply badge bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300;
+}
+.badge-warning {
+  @apply badge bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300;
+}
+.badge-success {
+  @apply badge bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300;
+}
+.badge-ghost {
+  @apply badge bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-400;
+}
+.badge-primary {
+  @apply badge bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300;
+}
+
+/* Kanban dnd animations */
+.kanban-card-dragging {
+  @apply opacity-40;
+}
+.kanban-column-over {
+  @apply ring-2 ring-primary ring-offset-2 dark:ring-offset-slate-900;
+}
+
+/* Gantt */
+.gantt-bar {
+  @apply rounded cursor-pointer transition-opacity hover:opacity-80;
+}
+.gantt-bar-critical {
+  @apply bg-red-500;
+}
+.gantt-bar-normal {
+  @apply bg-indigo-400;
+}
+.gantt-bar-done {
+  @apply bg-green-500;
+}
+
+/* Scrollbar */
+.scroll-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-slate-700 rounded-full;
+}
+.scroll-thin::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+/* Heatmap cell */
+.heat-cell {
+  @apply rounded transition-colors;
+}
+
+/* Mobile menu animation */
+@keyframes slide-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+.slide-in {
+  animation: slide-in 0.2s ease-out;
+}
+
+/* Reusable text utility classes for dark mode */
+.text-muted {
+  @apply text-gray-500 dark:text-slate-400;
+}
+.text-faint {
+  @apply text-gray-400 dark:text-slate-500;
+}
+.text-body {
+  @apply text-gray-700 dark:text-slate-200;
+}
+.text-heading {
+  @apply text-gray-900 dark:text-slate-100;
+}
+.border-subtle {
+  @apply border-gray-200 dark:border-slate-800;
+}
+.bg-elevated {
+  @apply bg-white dark:bg-slate-900;
+}
+

@@ -1,0 +1,52 @@
+# Production values for smart-pm.
+# Copy this to values.prod.yaml and fill in the secrets.
+
+bundledDatabase: false
+bundledRedis: false
+
+backend:
+  replicaCount: 4
+  autoscaling:
+    minReplicas: 4
+    maxReplicas: 20
+    targetCPUUtilizationPercentage: 60
+  persistence:
+    enabled: true
+    storageClass: gp3
+    size: 100Gi
+  env:
+    corsOrigins: "https://spm.example.com"
+    sentryEnv: "production"
+    sentryTracesSampleRate: "0.2"
+    otelExporterOtlpEndpoint: "http://otel-collector:4317"
+
+celery:
+  replicaCount: 3
+
+frontend:
+  replicaCount: 3
+  env:
+    publicApiUrl: "https://spm.example.com"
+    publicWsUrl: "wss://spm.example.com"
+
+ingress:
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: spm.example.com
+      paths:
+        - path: /api
+          service: backend
+        - path: /ws
+          service: backend
+        - path: /
+          service: frontend
+  tls:
+    - hosts:
+        - spm.example.com
+      secretName: spm-tls-prod
+
+networkPolicy:
+  enabled: true

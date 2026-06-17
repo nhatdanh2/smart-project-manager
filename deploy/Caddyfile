@@ -1,0 +1,34 @@
+# Caddy reverse proxy config for the Smart PM stack.
+# Used by the optional `caddy` service in docker-compose.prod.yml.
+#
+# Replace `spm.example.com` with your real hostname.  Caddy will
+# automatically request a Let's Encrypt cert the first time it runs.
+
+spm.example.com {
+    # WebSocket-aware reverse proxy for the API + realtime channels.
+    @api path /api/* /ws/*
+    reverse_proxy @api backend:8000
+
+    # Everything else is the Next.js frontend.
+    reverse_proxy frontend:3000
+
+    encode gzip zstd
+    header {
+        # Security headers
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # HSTS + CSP — loosen the CSP if you need inline scripts
+        Content-Security-Policy "default-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+        # Remove the Server header
+        -Server
+    }
+
+    log {
+        output file /data/access.log {
+            roll_size 10mb
+            roll_keep 5
+        }
+    }
+}

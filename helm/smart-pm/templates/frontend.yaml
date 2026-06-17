@@ -1,0 +1,91 @@
+{{- if .Values.frontend.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "smart-pm.fullname" . }}-frontend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: frontend
+    app.kubernetes.io/component: web
+    {{- include "smart-pm.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.frontend.service.type }}
+  ports:
+    - port: {{ .Values.frontend.service.port }}
+      targetPort: http
+      name: http
+  selector:
+    app.kubernetes.io/name: frontend
+    app.kubernetes.io/instance: {{ .Release.Name }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "smart-pm.fullname" . }}-frontend
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: frontend
+    app.kubernetes.io/component: web
+    {{- include "smart-pm.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.frontend.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: frontend
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: frontend
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        {{- include "smart-pm.labels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "smart-pm.serviceAccountName" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: web
+          image: "{{ .Values.image.registry }}/{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.frontend.service.targetPort }}
+          env:
+            - name: NEXT_PUBLIC_API_URL
+              value: {{ .Values.frontend.env.publicApiUrl | quote }}
+            - name: NEXT_PUBLIC_WS_URL
+              value: {{ .Values.frontend.env.publicWsUrl | quote }}
+            - name: NEXTAUTH_URL
+              value: {{ .Values.frontend.env.publicApiUrl | quote }}
+            - name: NEXTAUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "smart-pm.fullname" . }}-secrets
+                  key: NEXTAUTH_SECRET
+            - name: NEXT_PUBLIC_SENTRY_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "smart-pm.fullname" . }}-secrets
+                  key: SENTRY_DSN
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            {{- toYaml .Values.frontend.resources | nindent 12 }}
+{{- end }}

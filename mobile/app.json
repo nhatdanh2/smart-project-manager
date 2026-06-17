@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "Smart PM",
+    "slug": "smart-pm-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "smartpm",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0ea5e9"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.smartpm.mobile",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Dùng Face ID để đăng nhập nhanh vào Smart PM"
+      }
+    },
+    "android": {
+      "package": "com.smartpm.mobile",
+      "permissions": ["USE_BIOMETRIC", "USE_FINGERPRINT", "POST_NOTIFICATIONS"]
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-secure-store",
+        { "requireAuthentication": false }
+      ],
+      "expo-local-authentication",
+      "expo-notifications"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "apiBaseUrl": "http://localhost:8000",
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "your-eas-project-id"
+      }
+    }
+  }
+}

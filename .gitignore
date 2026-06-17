@@ -1,0 +1,75 @@
+# ---- Python ----
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---- Virtual envs ----
+.venv/
+venv/
+env/
+ENV/
+
+# ---- Env / secrets ----
+.env
+.env.local
+.env.*.local
+.env.production
+secrets/
+
+# ---- SQLite / local DB ----
+*.db
+*.sqlite
+*.sqlite3
+
+# ---- Node / Next.js ----
+node_modules/
+.next/
+out/
+build/
+dist/
+.turbo/
+*.tsbuildinfo
+.npm/
+.pnpm-store/
+yarn-error.log
+# Note: package-lock.json / yarn.lock / pnpm-lock.yaml should be COMMITTED
+# (keep this section blank on purpose)
+
+# ---- Logs ----
+*.log
+logs/
+
+# ---- Uploads (keep .gitkeep, ignore everything else) ----
+backend/uploads/*
+!backend/uploads/.gitkeep
+!backend/uploads/**/.gitkeep
+backend/uploads/**/*
+!backend/uploads/**/.gitkeep
+
+# ---- OS / IDE ----
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ---- Coverage / test artefacts ----
+.coverage
+htmlcov/
+coverage/
+.tox/
+
+# ---- Misc ----
+*.bak
+*.tmp
+*.pid
+*.seed
+*.pid.lock

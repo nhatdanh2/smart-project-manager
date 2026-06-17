@@ -1,0 +1,13 @@
+# Staging example.  Copy to ``terraform.tfvars`` (gitignored) and fill
+# in the real values, or pass via TF_VAR_xxx environment variables.
+
+aws_region    = "ap-southeast-1"
+replica_region = "ap-southeast-3"
+project_name   = "spm"
+environment    = "staging"
+cluster_name   = "spm-cluster-staging"
+domain_name    = "staging.spm.example.com"
+
+# Generate with: openssl rand -hex 24
+db_password      = "REPLACE_ME"
+redis_auth_token = "REPLACE_ME"

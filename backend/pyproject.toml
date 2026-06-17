@@ -1,0 +1,36 @@
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["uploads", "smart_project.db"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "N",   # pep8-naming
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "B008",  # function call in default argument (FastAPI uses this pattern)
+    "E402",  # module-level import not at top
+]
+
+[tool.ruff.lint.per-file-ignores]
+"app/routers/*" = ["N"]  # dynamic path params are common here
+"app/workers/*" = ["B"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+no_infer_generic_types = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+check_untyped_defs = true

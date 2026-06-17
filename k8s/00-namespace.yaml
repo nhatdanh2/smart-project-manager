@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: smart-pm
+  labels:
+    name: smart-pm
+    app.kubernetes.io/part-of: smart-project-manager
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: smart-pm-default
+  namespace: smart-pm

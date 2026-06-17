@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "smart-pm.fullname" . }}-secrets
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "smart-pm.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  JWT_SECRET_KEY: {{ required "backend.secrets.jwtSecretKey is required" .Values.backend.secrets.jwtSecretKey | quote }}
+  POSTGRES_PASSWORD: {{ required "backend.secrets.postgresPassword is required" .Values.backend.secrets.postgresPassword | quote }}
+  ANTHROPIC_API_KEY: {{ .Values.backend.secrets.anthropicApiKey | default "" | quote }}
+  OPENAI_API_KEY: {{ .Values.backend.secrets.openaiApiKey | default "" | quote }}
+  SENTRY_DSN: {{ .Values.backend.secrets.sentryDsn | default "" | quote }}
+  NEXTAUTH_SECRET: {{ .Values.frontend.secrets.nextauthSecret | default .Values.backend.secrets.jwtSecretKey | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "smart-pm.fullname" . }}-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "smart-pm.labels" . | nindent 4 }}
+data:
+  APP_ENV: "production"
+  API_PREFIX: {{ .Values.backend.env.apiPrefix | quote }}
+  USE_CELERY: {{ .Values.backend.env.useCelery | quote }}
+  REDIS_URL: "redis://{{ include "smart-pm.fullname" . }}-redis:6379/0"
+  DATABASE_URL: "postgresql+psycopg2://{{ .Values.postgres.auth.username }}:$(POSTGRES_PASSWORD)@{{ include "smart-pm.fullname" . }}-postgres:5432/{{ .Values.postgres.auth.database }}"
+  ANTHROPIC_MODEL: "claude-sonnet-4-6"
+  WHISPER_MODEL: "whisper-1"
+  CORS_ORIGINS: {{ .Values.backend.env.corsOrigins | quote }}
+  RATE_LIMIT_ENABLED: {{ .Values.backend.env.rateLimitEnabled | quote }}
+  RATE_LIMIT_DEFAULT: {{ .Values.backend.env.rateLimitDefault | quote }}
+  RATE_LIMIT_AI: {{ .Values.backend.env.rateLimitAi | quote }}
+  RATE_LIMIT_UPLOAD: {{ .Values.backend.env.rateLimitUpload | quote }}
+  RATE_LIMIT_AUTH: {{ .Values.backend.env.rateLimitAuth | quote }}
+  SENTRY_ENV: {{ .Values.backend.env.sentryEnv | quote }}
+  SENTRY_TRACES_SAMPLE_RATE: {{ .Values.backend.env.sentryTracesSampleRate | quote }}
+  OTEL_SERVICE_NAME: {{ .Values.backend.env.otelServiceName | quote }}
+  OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.backend.env.otelExporterOtlpEndpoint | default "" | quote }}

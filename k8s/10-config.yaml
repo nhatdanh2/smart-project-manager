@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: smart-pm
+data:
+  APP_ENV: "production"
+  API_PREFIX: "/api"
+  USE_CELERY: "true"
+  REDIS_URL: "redis://redis:6379/0"
+  DATABASE_URL: "postgresql+psycopg2://spm:$(POSTGRES_PASSWORD)@postgres:5432/spm"
+  ANTHROPIC_MODEL: "claude-sonnet-4-6"
+  WHISPER_MODEL: "whisper-1"
+  CORS_ORIGINS: "https://spm.example.com"
+  RATE_LIMIT_ENABLED: "true"
+  RATE_LIMIT_DEFAULT: "120/minute"
+  RATE_LIMIT_AI: "10/minute"
+  RATE_LIMIT_UPLOAD: "20/minute"
+  RATE_LIMIT_AUTH: "10/minute"
+  SENTRY_ENV: "production"
+  SENTRY_TRACES_SAMPLE_RATE: "0.2"
+  OTEL_SERVICE_NAME: "smart-pm-backend"
+  # Leave empty to disable
+  OTEL_EXPORTER_OTLP_ENDPOINT: ""
+---
+# This Secret is referenced by the rest of the manifests; populate
+# with the script in the README.  ``stringData`` lets you write the
+# values inline for local dev only.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secrets
+  namespace: smart-pm
+type: Opaque
+stringData:
+  JWT_SECRET_KEY: "change-me"
+  POSTGRES_PASSWORD: "change-me"
+  ANTHROPIC_API_KEY: ""
+  OPENAI_API_KEY: ""
+  SENTRY_DSN: ""

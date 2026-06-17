@@ -1,0 +1,193 @@
+# Smart Student Project Manager — production-like stack.
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+#   docker compose -f docker-compose.prod.yml ps
+#   docker compose -f docker-compose.prod.yml logs -f backend
+#
+# Differences from docker-compose.yml (dev):
+#   - no source bind mounts (rebuild image on change)
+#   - no --reload on the API
+#   - Next.js runs in production mode (`npm start`)
+#   - healthchecks are strict
+#   - restart: unless-stopped
+#   - .env.prod is required
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: spm-postgres-prod
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"   # bind to loopback only
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  redis:
+    image: redis:7-alpine
+    container_name: spm-redis-prod
+    # --maxmemory + LRU eviction keeps the cache bounded
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    volumes:
+      - redis_data:/data
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: spm-backend:latest
+    container_name: spm-backend-prod
+    # Run as non-root for safety
+    user: "1000:1000"
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379/0
+      USE_CELERY: "true"
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ALGORITHM: HS256
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-6}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      RATE_LIMIT_ENABLED: "true"
+      RATE_LIMIT_DEFAULT: ${RATE_LIMIT_DEFAULT:-120/minute}
+      RATE_LIMIT_AI: ${RATE_LIMIT_AI:-10/minute}
+      RATE_LIMIT_UPLOAD: ${RATE_LIMIT_UPLOAD:-20/minute}
+      RATE_LIMIT_AUTH: ${RATE_LIMIT_AUTH:-10/minute}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_ENV: production
+      SENTRY_TRACES_SAMPLE_RATE: "0.2"
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_SERVICE_NAME: spm-backend
+      APP_ENV: production
+    volumes:
+      - backend_uploads:/app/uploads
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    image: spm-backend:latest
+    container_name: spm-celery-prod
+    user: "1000:1000"
+    command: celery -A app.workers.celery_app worker --loglevel=info --concurrency=2
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379/0
+      USE_CELERY: "true"
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      APP_ENV: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: spm-frontend:latest
+    container_name: spm-frontend-prod
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXT_PUBLIC_SENTRY_DSN: ${SENTRY_DSN:-}
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO/dev/null", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+
+  # Optional: reverse proxy with automatic TLS via Let's Encrypt
+  # (only run with `docker compose -f docker-compose.prod.yml --profile with-proxy up -d`)
+  caddy:
+    image: caddy:2-alpine
+    container_name: spm-caddy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+    profiles: ["with-proxy"]
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  backend_uploads:
+  caddy_data:
+  caddy_config:
